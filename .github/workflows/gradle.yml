@@ -55,7 +55,7 @@ jobs:
       # Build Docker Image
       - name: Build Docker Image
         if: runner.os == 'Linux'
-        run: docker build -t rumanasys/lab2_javagradle:latest
+        run: docker build -t rumanasys/lab2_javagradle:latest .
 
       # Push Docker Image to Docker Hub
       - name: Push Docker Image to Docker Hub
