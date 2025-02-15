@@ -20,8 +20,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Display message
         run: echo "Hi, I am from COSC 1209 class"
@@ -32,7 +31,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Gradle
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
       - name: Grant execute permissions for Gradle (Linux/macOS)
@@ -40,11 +39,16 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle Wrapper
+        run: ./gradlew build --no-daemon --info
+
+      # Fix: Corrected Windows conditional execution
+      - name: Run platform-specific command
+        shell: bash  # Ensures correct shell is used for Linux/macOS
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            gradlew.bat build --no-daemon --info
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            echo "Running on Windows"
           else
-            ./gradlew build --no-daemon --info
+            echo "Running on Linux/macOS"
           fi
 
       # Docker login step (only for Ubuntu)
@@ -52,12 +56,12 @@ jobs:
         if: runner.os == 'Linux'
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # Build Docker Image
+      # Build Docker Image (only for Ubuntu)
       - name: Build Docker Image
         if: runner.os == 'Linux'
-        run: docker build -t ${{ env.IMAGE_NAME }}:latest .
+        run: docker build -t ${{ env.IMAGE_NAME }} .
 
-      # Push Docker Image to Docker Hub
+      # Push Docker Image to Docker Hub (only for Ubuntu)
       - name: Push Docker Image to Docker Hub
         if: runner.os == 'Linux'
         run: docker push ${{ env.IMAGE_NAME }}:latest
@@ -68,8 +72,7 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
