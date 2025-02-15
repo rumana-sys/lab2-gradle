@@ -1,1 +1,1 @@
-# lab2-gradle
+# java-with-gradle
