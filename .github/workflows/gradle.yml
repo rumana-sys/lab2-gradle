@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  IMAGE_NAME: rumanak/lab2_javagradle  # Docker image name
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -39,32 +36,31 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle Wrapper
-        run: ./gradlew build --no-daemon --info
+        run: ./gradlew build
 
-      # Fix: Corrected Windows conditional execution
-      - name: Run platform-specific command
-        shell: bash  # Ensures correct shell is used for Linux/macOS
+      # Debug Docker Credentials
+      - name: Debug Docker Credentials
         run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            echo "Running on Windows"
-          else
-            echo "Running on Linux/macOS"
-          fi
+          echo "Docker Username: ${{ secrets.DOCKER_USERNAME }}"
+          echo "Docker Token: ${{ secrets.DOCKER_TOKEN }}"
 
       # Docker login step (only for Ubuntu)
       - name: Log in to Docker Hub
         if: runner.os == 'Linux'
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: |
+          echo "Docker Username: ${{ secrets.DOCKER_USERNAME }}"
+          echo "Docker Token: ${{ secrets.DOCKER_TOKEN }}"
+          echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # Build Docker Image (only for Ubuntu)
+      # Build Docker Image
       - name: Build Docker Image
         if: runner.os == 'Linux'
-        run: docker build -t ${{ env.IMAGE_NAME }} .
+        run: docker build -t rumanasys/lab2_javagradle:latest .
 
-      # Push Docker Image to Docker Hub (only for Ubuntu)
+      # Push Docker Image to Docker Hub
       - name: Push Docker Image to Docker Hub
         if: runner.os == 'Linux'
-        run: docker push ${{ env.IMAGE_NAME }}:latest
+        run: docker push rumanasys/lab2_javagradle:latest
 
   dependency-submission:
     runs-on: ubuntu-latest
