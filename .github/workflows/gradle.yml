@@ -1,0 +1,81 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  IMAGE_NAME: rumanak/lab2_javagradle  # Docker image name
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display message
+        run: echo "Hi, I am from COSC 1209 class"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permissions for Gradle (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: chmod +x gradlew
+
+      - name: Build with Gradle Wrapper
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            gradlew.bat build --no-daemon --info
+          else
+            ./gradlew build --no-daemon --info
+          fi
+
+      # Docker login step (only for Ubuntu)
+      - name: Log in to Docker Hub
+        if: runner.os == 'Linux'
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      # Build Docker Image
+      - name: Build Docker Image
+        if: runner.os == 'Linux'
+        run: docker build -t ${{ env.IMAGE_NAME }}:latest .
+
+      # Push Docker Image to Docker Hub
+      - name: Push Docker Image to Docker Hub
+        if: runner.os == 'Linux'
+        run: docker push ${{ env.IMAGE_NAME }}:latest
+
+  dependency-submission:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@v3
