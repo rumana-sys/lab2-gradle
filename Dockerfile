@@ -1,23 +1,28 @@
-# Use an official OpenJDK runtime as a parent image
+# Use an official OpenJDK runtime as the base image
 FROM openjdk:17-jdk-slim
 
-# Set the working directory in the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy only necessary files first
+# Copy only necessary files first (for caching efficiency)
 COPY gradlew gradlew
+COPY gradle gradle
+COPY build.gradle settings.gradle ./
 
-# Make the Gradle wrapper executable
+# Grant execute permission to the Gradle wrapper
 RUN chmod +x gradlew
 
-# Install Gradle (optional, if you want to use a specific Gradle version)
-# RUN apt-get update && apt-get install -y gradle
+# Download dependencies before copying source code (improves build caching)
+RUN ./gradlew dependencies --no-daemon
 
-# Copy the rest of the project files into the container
+# Copy the remaining project files
 COPY . .
 
-# Build the project
-RUN ./gradlew build
+# Build the application
+RUN ./gradlew build --no-daemon
 
-# Set the command to run your app (modify according to your app's entry point)
+# Expose application port (modify based on your app's configuration)
+EXPOSE 8080
+
+# Run the Java application
 CMD ["java", "-jar", "build/libs/your-app-name.jar"]
